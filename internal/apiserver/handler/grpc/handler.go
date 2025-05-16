@@ -3,13 +3,16 @@
 // license that can be found in the LICENSE file. The original repo for
 // this file is github.com/xiahuaxiahua0616/miniblog. The professional
 
-package errno
+package handler
 
 import (
-	"net/http"
-
-	"github.com/onexstack/onexstack/pkg/errorsx"
+	apiv1 "github.com/xiahuaxiahua0616/miniblog/pkg/api/apiserver/v1"
 )
 
-// ErrPostNotFound 表示未找到指定的博客.
-var ErrPostNotFound = &errorsx.ErrorX{Code: http.StatusNotFound, Reason: "NotFound.PostNotFound", Message: "Post not found."}
+type Handler struct {
+	apiv1.UnimplementedMiniBlogServer
+}
+
+func NewHandler() *Handler {
+	return &Handler{}
+}
