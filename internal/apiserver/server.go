@@ -6,7 +6,11 @@
 package apiserver
 
 import (
+	"context"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	genericoptions "github.com/onexstack/onexstack/pkg/options"
@@ -86,7 +90,20 @@ func (cfg *Config) NewUnionServer() (*UnionServer, error) {
 
 // Run 运行应用.
 func (s *UnionServer) Run() error {
-	s.srv.RunOrDie()
+	go s.srv.RunOrDie()
+
+	// 创建一个os.Signal类型的channel，用于接收系统信号
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	<-quit
+	log.Infow("Shutdown down server...")
+
+	ctx, channel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer channel()
+
+	s.srv.GracefulStop(ctx)
+	log.Infow("Server stopped")
 	return nil
 }
 
