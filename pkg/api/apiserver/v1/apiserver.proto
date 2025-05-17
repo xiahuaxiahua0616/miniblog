@@ -50,8 +50,8 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 service MiniBlog {
     // Healthz 健康检查
     rpc Healthz(google.protobuf.Empty) returns (HealthzResponse) {
-        // 通过 google.api.http 注释，指定HTTP方法为GET、URL路径为/healthz
-        option(google.api.http) = {
+        // 通过 google.api.http 注释，指定 HTTP 方法为 GET、URL路径为 /healthz
+        option (google.api.http) = {
             get: "/healthz",
         };
 
@@ -64,18 +64,4 @@ service MiniBlog {
             tags: "服务治理";
         };
     }
-}
-
-// UpdatePostRequest 表示更新文章请求
-message UpdatePostRequest {
-    // postID 表示要更新的文章 ID，对应 {postID}
-    string postID = 1;
-    // title 表示更新后的博客标题
-    optional string title = 2;
-    // content 表示更新后的博客内容
-    optional string content = 3;
-}
-
-// UpdatePostResponse 表示更新文章响应
-message UpdatePostResponse {
 }
