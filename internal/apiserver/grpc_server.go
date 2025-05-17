@@ -5,6 +5,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	handler "github.com/xiahuaxiahua0616/miniblog/internal/apiserver/handler/grpc"
+	mw "github.com/xiahuaxiahua0616/miniblog/internal/pkg/middleware/grpc"
 	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/server"
 	apiv1 "github.com/xiahuaxiahua0616/miniblog/pkg/api/apiserver/v1"
 	"google.golang.org/grpc"
@@ -28,9 +29,18 @@ var _ server.Server = (*grpcServer)(nil)
 //  2. 处理默认值或回退逻辑
 //  3. 表达灵活选项
 func (c *ServerConfig) NewGRPCServerOr() (server.Server, error) {
+	// 配置 gRPC 服务器选项，包括拦截器链
+	serverOptions := []grpc.ServerOption{
+		// 注意拦截器顺序！
+		grpc.ChainUnaryInterceptor(
+			// 请求 ID 拦截器
+			mw.RequestIDInterceptor(),
+		),
+	}
 	// 创建 gRPC 服务器
 	grpcsrv, err := server.NewGRPCServer(
 		c.cfg.GRPCOptions,
+		serverOptions,
 		func(s grpc.ServiceRegistrar) {
 			apiv1.RegisterMiniBlogServer(s, handler.NewHandler())
 		},
