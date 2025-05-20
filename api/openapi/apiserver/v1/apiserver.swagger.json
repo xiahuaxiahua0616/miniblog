@@ -5,12 +5,12 @@
     "version": "1.0",
     "contact": {
       "name": "小而美的博客项目",
-      "url": "https://github.com/xiahuaxiahua0616/miniblog",
-      "email": "xhxiangshuijiao@163.com"
+      "url": "https://github.com/onexstack/miniblog",
+      "email": "colin404@foxmail.com"
     },
     "license": {
       "name": "MIT License",
-      "url": "https://github.com/xiahuaxiahua0616/miniblog/blob/master/LICENSE"
+      "url": "https://github.com/onexstack/miniblog/blob/master/LICENSE"
     }
   },
   "tags": [

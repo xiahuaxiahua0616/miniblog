@@ -3,16 +3,21 @@
 // license that can be found in the LICENSE file. The original repo for
 // this file is github.com/xiahuaxiahua0616/miniblog. The professional
 
-package handler
+package grpc
 
 import (
+	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/biz"
 	apiv1 "github.com/xiahuaxiahua0616/miniblog/pkg/api/apiserver/v1"
 )
 
 type Handler struct {
 	apiv1.UnimplementedMiniBlogServer
+
+	biz biz.IBiz
 }
 
-func NewHandler() *Handler {
-	return &Handler{}
+func NewHandler(biz biz.IBiz) *Handler {
+	return &Handler{
+		biz: biz,
+	}
 }

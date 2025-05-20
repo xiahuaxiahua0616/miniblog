@@ -1,3 +1,8 @@
+// Copyright 2025 xiahua <xhxiangshuijiao.com>. All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file. The original repo for
+// this file is github.com/xiahuaxiahua0616/miniblog. The professional
+
 package apiserver
 
 import (
@@ -7,6 +12,7 @@ import (
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	handler "github.com/xiahuaxiahua0616/miniblog/internal/apiserver/handler/http"
+	mw "github.com/xiahuaxiahua0616/miniblog/internal/pkg/middleware/gin"
 	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/server"
 )
 
@@ -22,6 +28,7 @@ var _ server.Server = (*ginServer)(nil)
 func (c *ServerConfig) NewGinServer() server.Server {
 	// 创建 Gin 引擎
 	engine := gin.New()
+	engine.Use(gin.Recovery(), mw.NoCache, mw.Cors, mw.Secure, mw.RequestIDMiddleware())
 
 	// 注册 REST API 路由
 	c.InstallRESTAPI(engine)
@@ -37,7 +44,41 @@ func (c *ServerConfig) InstallRESTAPI(engine *gin.Engine) {
 	InstallGenericAPI(engine)
 
 	// 创建核心业务处理器
-	handler := handler.NewHandler()
+	handler := handler.NewHandler(c.biz)
+
+	// 注册用户登录和令牌刷新接口。这2个接口比较简单，所以没有 API 版本
+	engine.POST("/login", handler.Login)
+	engine.PUT("/refresh-token", handler.RefreshToken)
+
+	authMiddlewares := []gin.HandlerFunc{}
+
+	// 注册 v1 版本 API 路由分组
+	v1 := engine.Group("/v1")
+	{
+		// 用户相关路由
+		userv1 := v1.Group("/users")
+		{
+			// 创建用户。这里要注意：创建用户是不用进行认证和授权的
+			userv1.POST("", handler.CreateUser)
+			userv1.Use(authMiddlewares...)
+			userv1.PUT(":userID/change-password", handler.ChangePassword) // 修改用户密码
+			userv1.PUT(":userID", handler.UpdateUser)                     // 更新用户信息
+			userv1.DELETE(":userID", handler.DeleteUser)                  // 删除用户
+			userv1.GET(":userID", handler.GetUser)                        // 查询用户详情
+			userv1.GET("", handler.ListUser)                              // 查询用户列表.
+		}
+
+		// 博客相关路由
+		postv1 := v1.Group("/posts", authMiddlewares...)
+		{
+			postv1.POST("", handler.CreateUser)       // 创建博客
+			postv1.PUT(":postID", handler.UpdatePost) // 更新博客
+			postv1.DELETE("", handler.DeletePost)     // 删除博客
+			postv1.GET(":postID", handler.GetPost)    // 查询博客详情
+			postv1.GET("", handler.ListPost)          // 查询博客列表
+		}
+
+	}
 
 	// 注册健康检查接口
 	engine.GET("/healthz", handler.Healthz)

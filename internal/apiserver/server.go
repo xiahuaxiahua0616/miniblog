@@ -14,7 +14,12 @@ import (
 	"time"
 
 	genericoptions "github.com/onexstack/onexstack/pkg/options"
+	"github.com/onexstack/onexstack/pkg/store/where"
+	"gorm.io/gorm"
 
+	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/biz"
+	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/pkg/contextx"
+	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/store"
 	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/log"
 	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/server"
 )
@@ -34,11 +39,12 @@ const (
 // Config 配置结构体，用于存储应用相关的配置.
 // 不用 viper.Get，是因为这种方式能更加清晰的知道应用提供了哪些配置项.
 type Config struct {
-	ServerMode  string
-	JWTKey      string
-	Expiration  time.Duration
-	GRPCOptions *genericoptions.GRPCOptions
-	HTTPOptions *genericoptions.HTTPOptions
+	ServerMode   string
+	JWTKey       string
+	Expiration   time.Duration
+	HTTPOptions  *genericoptions.HTTPOptions
+	GRPCOptions  *genericoptions.GRPCOptions
+	MySQLOptions *genericoptions.MySQLOptions
 }
 
 // UnionServer 定义一个联合服务器. 根据 ServerMode 决定要启动的服务器类型.
@@ -59,10 +65,15 @@ type UnionServer struct {
 
 type ServerConfig struct {
 	cfg *Config
+	biz biz.IBiz
 }
 
 // NewUnionServer 根据配置创建联合服务器.
 func (cfg *Config) NewUnionServer() (*UnionServer, error) {
+	// 注册租户解析函数，通过上下文获取用户ID
+	where.RegisterTenant("userID", func(ctx context.Context) string {
+		return contextx.UserID(ctx)
+	})
 
 	serverConfig, err := cfg.NewServerConfig()
 	if err != nil {
@@ -110,5 +121,19 @@ func (s *UnionServer) Run() error {
 // NewServerConfig 创建一个 *ServerConfig 实例.
 // 进阶：这里其实可以使用依赖注入的方式，来创建 *ServerConfig.
 func (cfg *Config) NewServerConfig() (*ServerConfig, error) {
-	return &ServerConfig{cfg: cfg}, nil
+	// 初始化数据库连接
+	db, err := cfg.NewDB()
+	if err != nil {
+		return nil, err
+	}
+	store := store.NewStore(db)
+	return &ServerConfig{
+		cfg: cfg,
+		biz: biz.NewBiz(store),
+	}, nil
+}
+
+// NewDB 创建一个 *gorm.DB 实例.
+func (cfg *Config) NewDB() (*gorm.DB, error) {
+	return cfg.MySQLOptions.NewDB()
 }

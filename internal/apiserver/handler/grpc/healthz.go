@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file. The original repo for
 // this file is github.com/xiahuaxiahua0616/miniblog. The professional
 
-package handler
+package grpc
 
 import (
 	"context"

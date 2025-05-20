@@ -1,3 +1,8 @@
+// Copyright 2025 xiahua <xhxiangshuijiao.com>. All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file. The original repo for
+// this file is github.com/xiahuaxiahua0616/miniblog. The professional
+
 package apiserver
 
 import (
@@ -42,7 +47,7 @@ func (c *ServerConfig) NewGRPCServerOr() (server.Server, error) {
 		c.cfg.GRPCOptions,
 		serverOptions,
 		func(s grpc.ServiceRegistrar) {
-			apiv1.RegisterMiniBlogServer(s, handler.NewHandler())
+			apiv1.RegisterMiniBlogServer(s, handler.NewHandler(c.biz))
 		},
 	)
 	if err != nil {
