@@ -1,3 +1,10 @@
+// Copyright 2024 孔令飞 <colin404@foxmail.com>. All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file. The original repo for
+// this file is https://github.com/onexstack/miniblog. The professional
+// version of this repository is https://github.com/onexstack/onex.
+
+// nolint: dupl
 package store
 
 import (
@@ -42,7 +49,7 @@ func newUserStore(store *datastore) *userStore {
 func (s *userStore) Create(ctx context.Context, obj *model.UserM) error {
 	if err := s.store.DB(ctx).Create(&obj).Error; err != nil {
 		log.Errorw("Failed to insert user into database", "err", err, "user", obj)
-		return errno.ErrDBWrite.WithMessage(err.Error())
+		return errno.ErrDBWrite.WithMessage("%s", err.Error())
 	}
 
 	return nil
@@ -52,7 +59,7 @@ func (s *userStore) Create(ctx context.Context, obj *model.UserM) error {
 func (s *userStore) Update(ctx context.Context, obj *model.UserM) error {
 	if err := s.store.DB(ctx).Save(obj).Error; err != nil {
 		log.Errorw("Failed to update user in database", "err", err, "user", obj)
-		return errno.ErrDBWrite.WithMessage(err.Error())
+		return errno.ErrDBWrite.WithMessage("%s", err.Error())
 	}
 
 	return nil
@@ -63,7 +70,7 @@ func (s *userStore) Delete(ctx context.Context, opts *where.Options) error {
 	err := s.store.DB(ctx, opts).Delete(new(model.UserM)).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		log.Errorw("Failed to delete user from database", "err", err, "conditions", opts)
-		return errno.ErrDBWrite.WithMessage(err.Error())
+		return errno.ErrDBWrite.WithMessage("%s", err.Error())
 	}
 
 	return nil
@@ -77,7 +84,7 @@ func (s *userStore) Get(ctx context.Context, opts *where.Options) (*model.UserM,
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errno.ErrUserNotFound
 		}
-		return nil, errno.ErrDBRead.WithMessage(err.Error())
+		return nil, errno.ErrDBRead.WithMessage("%s", err.Error())
 	}
 
 	return &obj, nil
@@ -89,7 +96,7 @@ func (s *userStore) List(ctx context.Context, opts *where.Options) (count int64,
 	err = s.store.DB(ctx, opts).Order("id desc").Find(&ret).Offset(-1).Limit(-1).Count(&count).Error
 	if err != nil {
 		log.Errorw("Failed to list users from database", "err", err, "conditions", opts)
-		err = errno.ErrDBRead.WithMessage(err.Error())
+		err = errno.ErrDBRead.WithMessage("%s", err.Error())
 	}
 	return
 }

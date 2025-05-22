@@ -3,6 +3,9 @@ package grpc
 import (
 	"context"
 
+	"github.com/onexstack/onexstack/pkg/store/where"
+	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/log"
+
 	apiv1 "github.com/xiahuaxiahua0616/miniblog/pkg/api/apiserver/v1"
 )
 
@@ -28,6 +31,7 @@ func (h *Handler) CreateUser(ctx context.Context, rq *apiv1.CreateUserRequest) (
 
 // UpdateUser 更新用户信息.
 func (h *Handler) UpdateUser(ctx context.Context, rq *apiv1.UpdateUserRequest) (*apiv1.UpdateUserResponse, error) {
+	log.Debugw("是这里调用!!!!!!!!!", "opt", where.T(ctx))
 	return h.biz.UserV1().Update(ctx, rq)
 }
 

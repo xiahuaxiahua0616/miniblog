@@ -1,13 +1,7 @@
-// Copyright 2025 xiahua <xhxiangshuijiao.com>. All rights reserved.
-// Use of this source code is governed by a MIT style
-// license that can be found in the LICENSE file. The original repo for
-// this file is github.com/xiahuaxiahua0616/miniblog. The professional
-
 package apiserver
 
 import (
 	"context"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -15,13 +9,13 @@ import (
 
 	genericoptions "github.com/onexstack/onexstack/pkg/options"
 	"github.com/onexstack/onexstack/pkg/store/where"
-	"gorm.io/gorm"
-
 	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/biz"
 	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/pkg/contextx"
+	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/pkg/validation"
 	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/store"
 	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/log"
 	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/server"
+	"gorm.io/gorm"
 )
 
 const (
@@ -58,23 +52,25 @@ type Config struct {
 //
 // HTTP 反向代理服务器依赖 gRPC 服务器，所以在开启 HTTP 反向代理服务器时，会先启动 gRPC 服务器.
 type UnionServer struct {
-	cfg *Config
 	srv server.Server
-	lis net.Listener
 }
 
+// ServerConfig 包含服务器的核心依赖和配置.
 type ServerConfig struct {
 	cfg *Config
 	biz biz.IBiz
+	val *validation.Validator
 }
 
 // NewUnionServer 根据配置创建联合服务器.
 func (cfg *Config) NewUnionServer() (*UnionServer, error) {
-	// 注册租户解析函数，通过上下文获取用户ID
+	// 注册租户解析函数，通过上下文获取用户 ID
+	//nolint: gocritic
 	where.RegisterTenant("userID", func(ctx context.Context) string {
 		return contextx.UserID(ctx)
 	})
 
+	// 创建服务配置，这些配置可用来创建服务器
 	serverConfig, err := cfg.NewServerConfig()
 	if err != nil {
 		return nil, err
@@ -85,6 +81,7 @@ func (cfg *Config) NewUnionServer() (*UnionServer, error) {
 	// 根据服务模式创建对应的服务实例
 	// 实际企业开发中，可以根据需要只选择一种服务器模式.
 	// 这里为了方便给你展示，通过 cfg.ServerMode 同时支持了 Gin 和 GRPC 2 种服务器模式.
+	// 默认为 gRPC 服务器模式.
 	var srv server.Server
 	switch cfg.ServerMode {
 	case GinServerMode:
@@ -103,18 +100,25 @@ func (cfg *Config) NewUnionServer() (*UnionServer, error) {
 func (s *UnionServer) Run() error {
 	go s.srv.RunOrDie()
 
-	// 创建一个os.Signal类型的channel，用于接收系统信号
+	// 创建一个 os.Signal 类型的 channel，用于接收系统信号
 	quit := make(chan os.Signal, 1)
+	// 当执行 kill 命令时（不带参数），默认会发送 syscall.SIGTERM 信号
+	// 使用 kill -2 命令会发送 syscall.SIGINT 信号（例如按 CTRL+C 触发）
+	// 使用 kill -9 命令会发送 syscall.SIGKILL 信号，但 SIGKILL 信号无法被捕获，因此无需监听和处理
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-
+	// 阻塞程序，等待从 quit channel 中接收到信号
 	<-quit
-	log.Infow("Shutdown down server...")
 
-	ctx, channel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer channel()
+	log.Infow("Shutting down server ...")
 
+	// 优雅关闭服务
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// 先关闭依赖的服务，再关闭被依赖的服务
 	s.srv.GracefulStop(ctx)
-	log.Infow("Server stopped")
+
+	log.Infow("Server exited")
 	return nil
 }
 
@@ -127,9 +131,11 @@ func (cfg *Config) NewServerConfig() (*ServerConfig, error) {
 		return nil, err
 	}
 	store := store.NewStore(db)
+
 	return &ServerConfig{
 		cfg: cfg,
 		biz: biz.NewBiz(store),
+		val: validation.New(store),
 	}, nil
 }
 

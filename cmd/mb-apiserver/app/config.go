@@ -1,8 +1,3 @@
-// Copyright 2025 xiahua <xhxiangshuijiao.com>. All rights reserved.
-// Use of this source code is governed by a MIT style
-// license that can be found in the LICENSE file. The original repo for
-// this file is github.com/xiahuaxiahua0616/miniblog. The professional
-
 package app
 
 import (
@@ -16,14 +11,14 @@ import (
 )
 
 const (
-	// defaultHomeDir 定义放置 miniblog 服务配置的默认目录。
+	// defaultHomeDir 定义放置 miniblog 服务配置的默认目录.
 	defaultHomeDir = ".miniblog"
 
-	// defaultConfigName 指定 miniblog 服务的默认配置文件名。
+	// defaultConfigName 指定 miniblog 服务的默认配置文件名.
 	defaultConfigName = "mb-apiserver.yaml"
 )
 
-// onInitialize 设置需要读取的配置文件名、环境变量，并将其内容读取到 viper 中。
+// onInitialize 设置需要读取的配置文件名、环境变量，并将其内容读取到 viper 中.
 func onInitialize() {
 	if configFile != "" {
 		// 从命令行选项指定的配置文件中读取
@@ -45,7 +40,7 @@ func onInitialize() {
 	// 读取环境变量并设置前缀
 	setupEnvironmentVariables()
 
-	// 读取配置文件。如果指定了配置文件名，则使用指定的配置文件，否则在注册的搜索路径中搜索
+	// 读取配置文件.如果指定了配置文件名，则使用指定的配置文件，否则在注册的搜索路径中搜索
 	if err := viper.ReadInConfig(); err != nil {
 		log.Printf("Failed to read viper configuration file, err: %v", err)
 	}
@@ -54,18 +49,18 @@ func onInitialize() {
 	log.Printf("Using config file: %s", viper.ConfigFileUsed())
 }
 
-// setupEnvironmentVariables 配置环境变量规则。
+// setupEnvironmentVariables 配置环境变量规则.
 func setupEnvironmentVariables() {
 	// 允许 viper 自动匹配环境变量
 	viper.AutomaticEnv()
 	// 设置环境变量前缀
 	viper.SetEnvPrefix("MINIBLOG")
-	// 替换环境变量 key 中的分隔符 '。' 和 '-' 为 '_'
+	// 替换环境变量 key 中的分隔符 '.' 和 '-' 为 '_'
 	replacer := strings.NewReplacer(".", "_", "-", "_")
 	viper.SetEnvKeyReplacer(replacer)
 }
 
-// searchDirs 返回默认的配置文件搜索目录。
+// searchDirs 返回默认的配置文件搜索目录.
 func searchDirs() []string {
 	// 获取用户主目录
 	homeDir, err := os.UserHomeDir()

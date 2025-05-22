@@ -1,28 +1,23 @@
-// Copyright 2025 xiahua <xhxiangshuijiao.com>. All rights reserved.
-// Use of this source code is governed by a MIT style
-// license that can be found in the LICENSE file. The original repo for
-// this file is github.com/xiahuaxiahua0616/miniblog. The professional
-
 package app
 
 import (
-	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/log"
-	"github.com/xiahuaxiahua0616/miniblog/pkg/version"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/xiahuaxiahua0616/miniblog/cmd/mb-apiserver/app/options"
+	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/log"
+	"github.com/xiahuaxiahua0616/miniblog/pkg/version"
 )
 
-var configFile string
+var configFile string // 配置文件路径
 
-// NewMiniBlogCommand 创建一个 *cobra.Command 对象，用于启动应用程序。
+// NewMiniBlogCommand 创建一个 *cobra.Command 对象，用于启动应用程序.
 func NewMiniBlogCommand() *cobra.Command {
+	// 创建默认的应用命令行选项
 	opts := options.NewServerOptions()
 
 	cmd := &cobra.Command{
 		// 指定命令的名字，该名字会出现在帮助信息中
-		Use: " mb-apiserver",
+		Use: "mb-apiserver",
 		// 命令的简短描述
 		Short: "A mini blog show best practices for develop a full-featured Go project",
 		// 命令的详细描述
@@ -30,7 +25,25 @@ func NewMiniBlogCommand() *cobra.Command {
 
 The project features include:
 • Utilization of a clean architecture;
-...
+• Use of many commonly used Go packages: gorm, casbin, govalidator, jwt, gin, 
+  cobra, viper, pflag, zap, pprof, grpc, protobuf, grpc-gateway, etc.;
+• A standardized directory structure following the project-layout convention;
+• Authentication (JWT) and authorization features (casbin);
+• Independently designed log and error packages;
+• Management of the project using a high-quality Makefile;
+• Static code analysis;
+• Includes unit tests, performance tests, fuzz tests, and mock tests;
+• Rich web functionalities (tracing, graceful shutdown, middleware, CORS, 
+  recovery from panics, etc.);
+• Implementation of HTTP, HTTPS, and gRPC servers;
+• Implementation of JSON and Protobuf data exchange formats;
+• The project adheres to numerous development standards: 
+  code standards, versioning standards, API standards, logging standards, 
+  error handling standards, commit standards, etc.;
+• Access to MySQL with programming implementation;
+• Implemented business functionalities: user management and blog management;
+• RESTful API design standards;
+• OpenAPI 3.0/Swagger 2.0 API documentation;
 • High-quality code.`,
 		// 命令出错时，不打印帮助信息。设置为 true 可以确保命令出错时一眼就能看到错误信息
 		SilenceUsage: true,
@@ -38,9 +51,10 @@ The project features include:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return run(opts)
 		},
-		// 设置命令运行时的参数检查，不需要指定命令行参数。例如：。/miniblog param1 param2
+		// 设置命令运行时的参数检查，不需要指定命令行参数。例如：./miniblog param1 param2
 		Args: cobra.NoArgs,
 	}
+
 	// 初始化配置函数，在每个命令运行时调用
 	cobra.OnInitialize(onInitialize)
 
@@ -53,9 +67,11 @@ The project features include:
 
 	// 添加 --version 标志
 	version.AddFlags(cmd.PersistentFlags())
+
 	return cmd
 }
 
+// run 是主运行逻辑，负责初始化日志、解析配置、校验选项并启动服务器。
 func run(opts *options.ServerOptions) error {
 	// 如果传入 --version，则打印版本信息并退出
 	version.PrintAndExitIfRequested()

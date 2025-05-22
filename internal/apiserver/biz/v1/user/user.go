@@ -1,5 +1,7 @@
 package user
 
+//go:generate mockgen -destination mock_user.go -package user github.com/onexstack/miniblog/internal/apiserver/biz/v1/user UserBiz
+
 import (
 	"context"
 	"sync"
@@ -8,9 +10,9 @@ import (
 	"github.com/jinzhu/copier"
 	"github.com/onexstack/onexstack/pkg/store/where"
 	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/model"
+	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/pkg/contextx"
 	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/pkg/conversion"
 	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/store"
-	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/contextx"
 	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/errno"
 	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/known"
 	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/log"
@@ -115,6 +117,7 @@ func (b *userBiz) Create(ctx context.Context, rq *apiv1.CreateUserRequest) (*api
 func (b *userBiz) Update(ctx context.Context, rq *apiv1.UpdateUserRequest) (*apiv1.UpdateUserResponse, error) {
 	userM, err := b.store.User().Get(ctx, where.T(ctx))
 	if err != nil {
+		log.Debugw("就是这里出错!!!!!!!", "opt", where.T(ctx))
 		return nil, err
 	}
 

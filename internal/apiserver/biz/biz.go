@@ -1,14 +1,21 @@
 package biz
 
+//go:generate mockgen -destination mock_biz.go -package biz github.com/onexstack/miniblog/internal/apiserver/biz IBiz
+
 import (
 	postv1 "github.com/xiahuaxiahua0616/miniblog/internal/apiserver/biz/v1/post"
 	userv1 "github.com/xiahuaxiahua0616/miniblog/internal/apiserver/biz/v1/user"
+
+	// Post V2 版本（未实现，仅展示用）
+	// postv2 "github.com/onexstack/miniblog/internal/apiserver/biz/v2/post".
 	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/store"
 )
 
+// IBiz 定义了业务层需要实现的方法.
 type IBiz interface {
+	// 获取用户业务接口.
 	UserV1() userv1.UserBiz
-
+	// 获取帖子业务接口.
 	PostV1() postv1.PostBiz
 	// 获取帖子业务接口（V2版本）.
 	// PostV2() post.PostBiz

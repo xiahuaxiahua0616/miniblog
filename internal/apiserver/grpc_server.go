@@ -1,19 +1,17 @@
-// Copyright 2025 xiahua <xhxiangshuijiao.com>. All rights reserved.
-// Use of this source code is governed by a MIT style
-// license that can be found in the LICENSE file. The original repo for
-// this file is github.com/xiahuaxiahua0616/miniblog. The professional
-
 package apiserver
 
 import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	genericvalidation "github.com/onexstack/onexstack/pkg/validation"
+	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/server"
+	"google.golang.org/grpc"
+
 	handler "github.com/xiahuaxiahua0616/miniblog/internal/apiserver/handler/grpc"
 	mw "github.com/xiahuaxiahua0616/miniblog/internal/pkg/middleware/grpc"
-	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/server"
+
 	apiv1 "github.com/xiahuaxiahua0616/miniblog/pkg/api/apiserver/v1"
-	"google.golang.org/grpc"
 )
 
 // grpcServer 定义一个 gRPC 服务器.
@@ -40,8 +38,15 @@ func (c *ServerConfig) NewGRPCServerOr() (server.Server, error) {
 		grpc.ChainUnaryInterceptor(
 			// 请求 ID 拦截器
 			mw.RequestIDInterceptor(),
+			// Bypass 拦截器，通过所有请求的认证
+			mw.AuthnBypasswInterceptor(),
+			// 请求默认值设置拦截器
+			mw.DefaulterInterceptor(),
+			// 数据校验拦截器
+			mw.ValidatorInterceptor(genericvalidation.NewValidator(c.val)),
 		),
 	}
+
 	// 创建 gRPC 服务器
 	grpcsrv, err := server.NewGRPCServer(
 		c.cfg.GRPCOptions,
