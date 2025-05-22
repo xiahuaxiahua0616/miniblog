@@ -16,13 +16,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/xiahuaxiahua0616/miniblog/examples/helper"
+	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/known"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"k8s.io/utils/ptr"
 
-	"github.com/xiahuaxiahua0616/miniblog/examples/helper"
-	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/known"
 	apiv1 "github.com/xiahuaxiahua0616/miniblog/pkg/api/apiserver/v1"
 )
 
@@ -95,7 +95,6 @@ func main() {
 		Nickname: ptr.To("令飞孔"),
 	})
 	if err != nil {
-		log.Printf("[UpdateUser     ] Error to update user: %v", createUserResponse.UserID)
 		log.Printf("Failed to update user: %v", err)
 		return
 	}

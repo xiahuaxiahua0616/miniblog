@@ -10,9 +10,9 @@ import (
 	genericoptions "github.com/onexstack/onexstack/pkg/options"
 	"github.com/onexstack/onexstack/pkg/store/where"
 	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/biz"
-	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/pkg/contextx"
 	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/pkg/validation"
 	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/store"
+	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/contextx"
 	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/log"
 	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/server"
 	"gorm.io/gorm"
@@ -67,6 +67,7 @@ func (cfg *Config) NewUnionServer() (*UnionServer, error) {
 	// 注册租户解析函数，通过上下文获取用户 ID
 	//nolint: gocritic
 	where.RegisterTenant("userID", func(ctx context.Context) string {
+		log.Debugw("这里在注册！！！！", "user_ididididid", contextx.UserID(ctx))
 		return contextx.UserID(ctx)
 	})
 
