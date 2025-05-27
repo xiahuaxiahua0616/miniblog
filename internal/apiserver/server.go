@@ -10,10 +10,12 @@ import (
 	genericoptions "github.com/onexstack/onexstack/pkg/options"
 	"github.com/onexstack/onexstack/pkg/store/where"
 	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/biz"
+	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/model"
 	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/pkg/validation"
 	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/store"
 	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/contextx"
 	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/log"
+	mw "github.com/xiahuaxiahua0616/miniblog/internal/pkg/middleware/grpc"
 	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/server"
 	"gorm.io/gorm"
 )
@@ -57,9 +59,20 @@ type UnionServer struct {
 
 // ServerConfig 包含服务器的核心依赖和配置.
 type ServerConfig struct {
-	cfg *Config
-	biz biz.IBiz
-	val *validation.Validator
+	cfg       *Config
+	biz       biz.IBiz
+	val       *validation.Validator
+	retriever mw.UserRetriever
+}
+
+// UserRetriever 定义一个用户数据获取器. 用来获取用户信息.
+type UserRetriever struct {
+	store store.IStore
+}
+
+// GetUser 根据用户 ID 获取用户信息.
+func (r *UserRetriever) GetUser(ctx context.Context, userID string) (*model.UserM, error) {
+	return r.store.User().Get(ctx, where.F("userID", userID))
 }
 
 // NewUnionServer 根据配置创建联合服务器.
@@ -137,6 +150,9 @@ func (cfg *Config) NewServerConfig() (*ServerConfig, error) {
 		cfg: cfg,
 		biz: biz.NewBiz(store),
 		val: validation.New(store),
+		retriever: &UserRetriever{
+			store: store,
+		},
 	}, nil
 }
 
