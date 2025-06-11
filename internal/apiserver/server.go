@@ -17,6 +17,7 @@ import (
 	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/log"
 	mw "github.com/xiahuaxiahua0616/miniblog/internal/pkg/middleware/grpc"
 	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/server"
+	"github.com/xiahuaxiahua0616/miniblog/pkg/auth"
 	"gorm.io/gorm"
 )
 
@@ -63,6 +64,7 @@ type ServerConfig struct {
 	biz       biz.IBiz
 	val       *validation.Validator
 	retriever mw.UserRetriever
+	authz     *auth.Authz
 }
 
 // UserRetriever 定义一个用户数据获取器. 用来获取用户信息.
@@ -146,13 +148,20 @@ func (cfg *Config) NewServerConfig() (*ServerConfig, error) {
 	}
 	store := store.NewStore(db)
 
+	// 初始化权限认证模块
+	authz, err := auth.NewAuthz(store.DB(context.TODO()))
+	if err != nil {
+		return nil, err
+	}
+
 	return &ServerConfig{
 		cfg: cfg,
-		biz: biz.NewBiz(store),
+		biz: biz.NewBiz(store, authz),
 		val: validation.New(store),
 		retriever: &UserRetriever{
 			store: store,
 		},
+		authz: authz,
 	}, nil
 }
 
