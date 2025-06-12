@@ -1,6 +1,10 @@
 package store
 
-import "github.com/xiahuaxiahua0616/miniblog/internal/pkg/log"
+import (
+	"context"
+
+	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/log"
+)
 
 // Logger is a logger that implements the Logger interface.
 // It uses the log package to log error messages with additional context.
@@ -12,6 +16,6 @@ func NewLogger() *Logger {
 }
 
 // Error logs an error message with the provided context using the log package.
-func (l *Logger) Error(err error, msg string, kvs ...any) {
-	log.Errorw(msg, append(kvs, "err", err)...)
+func (l *Logger) Error(ctx context.Context, err error, msg string, kvs ...any) {
+	log.W(ctx).Errorw(msg, append(kvs, "err", err)...)
 }

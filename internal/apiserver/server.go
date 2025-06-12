@@ -14,10 +14,12 @@ import (
 	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/pkg/validation"
 	"github.com/xiahuaxiahua0616/miniblog/internal/apiserver/store"
 	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/contextx"
+	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/known"
 	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/log"
-	mw "github.com/xiahuaxiahua0616/miniblog/internal/pkg/middleware/grpc"
+	mw "github.com/xiahuaxiahua0616/miniblog/internal/pkg/middleware/gin"
 	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/server"
 	"github.com/xiahuaxiahua0616/miniblog/pkg/auth"
+	"github.com/xiahuaxiahua0616/miniblog/pkg/token/token"
 	"gorm.io/gorm"
 )
 
@@ -68,44 +70,21 @@ type ServerConfig struct {
 	authz     *auth.Authz
 }
 
-// UserRetriever 定义一个用户数据获取器. 用来获取用户信息.
-type UserRetriever struct {
-	store store.IStore
-}
-
-// GetUser 根据用户 ID 获取用户信息.
-func (r *UserRetriever) GetUser(ctx context.Context, userID string) (*model.UserM, error) {
-	return r.store.User().Get(ctx, where.F("userID", userID))
-}
-
 // NewUnionServer 根据配置创建联合服务器.
 func (cfg *Config) NewUnionServer() (*UnionServer, error) {
 	// 注册租户解析函数，通过上下文获取用户 ID
 	//nolint: gocritic
 	where.RegisterTenant("userID", func(ctx context.Context) string {
-		log.Debugw("这里在注册！！！！", "user_ididididid", contextx.UserID(ctx))
 		return contextx.UserID(ctx)
 	})
 
-	// 创建服务配置，这些配置可用来创建服务器
-	serverConfig, err := cfg.NewServerConfig()
-	if err != nil {
-		return nil, err
-	}
+	// 初始化 token 包的签名密钥、认证 Key 及 Token 默认过期时间
+	token.Init(cfg.JWTKey, known.XUserID, cfg.Expiration)
 
 	log.Infow("Initializing federation server", "server-mode", cfg.ServerMode)
 
-	// 根据服务模式创建对应的服务实例
-	// 实际企业开发中，可以根据需要只选择一种服务器模式.
-	// 这里为了方便给你展示，通过 cfg.ServerMode 同时支持了 Gin 和 GRPC 2 种服务器模式.
-	// 默认为 gRPC 服务器模式.
-	var srv server.Server
-	switch cfg.ServerMode {
-	case GinServerMode:
-		srv, err = serverConfig.NewGinServer(), nil
-	default:
-		srv, err = serverConfig.NewGRPCServerOr()
-	}
+	// 创建服务配置，这些配置可用来创建服务器
+	srv, err := InitializeWebServer(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -139,34 +118,35 @@ func (s *UnionServer) Run() error {
 	return nil
 }
 
-// NewServerConfig 创建一个 *ServerConfig 实例.
-// 进阶：这里其实可以使用依赖注入的方式，来创建 *ServerConfig.
-func (cfg *Config) NewServerConfig() (*ServerConfig, error) {
-	// 初始化数据库连接
-	db, err := cfg.NewDB()
-	if err != nil {
-		return nil, err
-	}
-	store := store.NewStore(db)
-
-	// 初始化权限认证模块
-	authz, err := auth.NewAuthz(store.DB(context.TODO()))
-	if err != nil {
-		return nil, err
-	}
-
-	return &ServerConfig{
-		cfg: cfg,
-		biz: biz.NewBiz(store, authz),
-		val: validation.New(store),
-		retriever: &UserRetriever{
-			store: store,
-		},
-		authz: authz,
-	}, nil
-}
-
 // NewDB 创建一个 *gorm.DB 实例.
 func (cfg *Config) NewDB() (*gorm.DB, error) {
 	return cfg.MySQLOptions.NewDB()
+}
+
+// UserRetriever 定义一个用户数据获取器. 用来获取用户信息.
+type UserRetriever struct {
+	store store.IStore
+}
+
+// GetUser 根据用户 ID 获取用户信息.
+func (r *UserRetriever) GetUser(ctx context.Context, userID string) (*model.UserM, error) {
+	return r.store.User().Get(ctx, where.F("userID", userID))
+}
+
+// ProvideDB 根据配置提供一个数据库实例。
+func ProvideDB(cfg *Config) (*gorm.DB, error) {
+	return cfg.NewDB()
+}
+
+func NewWebServer(serverMode string, serverConfig *ServerConfig) (server.Server, error) {
+	// 根据服务模式创建对应的服务实例
+	// 实际企业开发中，可以根据需要只选择一种服务器模式.
+	// 这里为了方便给你展示，通过 cfg.ServerMode 同时支持了 Gin 和 GRPC 2 种服务器模式.
+	// 默认为 gRPC 服务器模式.
+	switch serverMode {
+	case GinServerMode:
+		return serverConfig.NewGinServer(), nil
+	default:
+		return serverConfig.NewGRPCServerOr()
+	}
 }

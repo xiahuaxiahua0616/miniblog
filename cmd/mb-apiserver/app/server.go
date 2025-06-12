@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/xiahuaxiahua0616/miniblog/cmd/mb-apiserver/app/options"
 	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/log"
-	"github.com/xiahuaxiahua0616/miniblog/pkg/version"
+	"github.com/xiahuaxiahua0616/miniblog/third_party/version"
 )
 
 var configFile string // 配置文件路径

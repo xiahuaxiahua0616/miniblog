@@ -3,7 +3,6 @@ package grpc
 import (
 	"context"
 
-	"github.com/xiahuaxiahua0616/miniblog/internal/pkg/log"
 	apiv1 "github.com/xiahuaxiahua0616/miniblog/pkg/api/apiserver/v1"
 )
 
@@ -45,6 +44,5 @@ func (h *Handler) GetUser(ctx context.Context, rq *apiv1.GetUserRequest) (*apiv1
 // ListUser 列出用户.
 func (h *Handler) ListUser(ctx context.Context, rq *apiv1.ListUserRequest) (*apiv1.ListUserResponse, error) {
 	a, b := h.biz.UserV1().List(ctx, rq)
-	log.Debugw("3333这里的错误！！！", "err", b)
 	return a, b
 }
